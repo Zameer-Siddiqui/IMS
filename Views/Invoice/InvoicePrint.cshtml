@@ -1,0 +1,112 @@
+﻿@model IMS.Models.Invoice
+
+@{
+    ViewData["Title"] = "Invoice Print";
+    int serialno = 0;
+}
+
+ @section Styles {
+     <link rel="stylesheet" href="~/css/Print.css" />
+}
+
+<div class="card" id="invoice">
+    <div class="card-body p-0">
+        <div class="py-0">
+            <div class="">
+                <table class="table align-middle table-nowrap table-centered mb-0">
+                    <thead>
+                        <tr>
+                            <th colspan="6">
+                                <div class="invoice-title">
+                                    <div class="float-end">
+                                        <h4 class="font-size-15">Invoice No: @Model.Id <span class="badge bg-success font-size-12 ms-2">Paid</span></h4>
+                                    </div>
+                                    <div class="mb-1">
+                                        <h2 class="mb-1 text-muted">Unix Softech</h2>
+                                    </div>
+                                    <div class="text-muted">
+                                        <p class="mb-1">Shoppers stop, 1st Floor</p>
+                                        <p class="mb-1"><i class="uil uil-envelope-alt me-1"></i> unixsoftech@unixsoftech.com</p>
+                                        <p><i class="uil uil-phone me-1"></i> +91 9724349871</p>
+                                    </div>
+                                </div>
+
+                                <hr class="my-0 line">
+
+                                <div class="row des">
+                                    <div class="col-sm-6">
+                                        <div class="text-muted">
+                                            <h5 class="font-size-16 mb-1">Billed To:</h5>
+                                            <h5 class="font-size-15 mb-0">@Model.CidNavigation.Name</h5>
+                                            <p class="mb-1">@Model.CidNavigation.Address</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="text-muted text-sm-end">
+                                            <div class="mt-0">
+                                                <h5 class="font-size-15 mb-1">Invoice Date:</h5>
+                                                <p>@Model.Date?.ToString("dd-MM-yyyy")</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </th>
+                        </tr>
+                        <tr>
+                            <th>Sr.no</th>
+                            <th>Name</th>
+                            <th>Price</th>
+                            <th>Quantity</th>
+                            <th>Discount</th>
+                            <th class="text-end" style="width: 120px;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var detail in Model.InvoiceLists)
+                        {
+                            <tr>
+                                <td>@(++serialno)</td>
+                                <td>@detail.Name</td>
+                                <td>@detail.Price</td>
+                                <td>@detail.Quantity</td>
+                                <td>@detail.Discount%</td>
+                                <td class="text-end">@detail.Total</td>
+                            </tr>
+                        }
+                        <tr>
+                            <th scope="row" colspan="5" class="text-end">Grand Total</th>
+                            <td class="text-end">@Model.GrandTotal</td>
+                        </tr>
+                        <tr>
+                            <th scope="row" colspan="5" class="border-0 text-end">
+                                Total Discount:
+                            </th>
+                            <td class="border-0 text-end">@Model.TotalDiscount%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.onload = function () {
+        let body = document.getElementById("body").innerHTML;
+        let template = document.getElementById("invoice").innerHTML;
+        //alert(template);
+        //document.getelementbyid("body").innerHTML=template;
+        window.print();
+        //document.getelementbyid("body").innerHTML=body;
+        document.getElementById("body").innerHTML = template;
+        setTimeout(function () {
+
+            window.close();
+
+        }, 1000);
+
+
+
+
+    }
+</script>

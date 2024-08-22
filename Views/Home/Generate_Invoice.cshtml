@@ -1,0 +1,197 @@
+﻿@model IMS.Models.Invoice
+@{
+    ViewData["Title"] = "Generate-Invoice";
+    var customers = ViewBag.Customers ?? new SelectList(Enumerable.Empty<IMS.Models.Customer>(), "Id", "Name");
+    var productsData = ViewBag.ProductsData ?? new List<dynamic>(); // Handle null case
+}
+
+<div class="container">
+    <!-- Form tag starts -->
+    <form asp-action="CreateInvoice" asp-controller="Home" method="post">
+        <!-- Existing form fields -->
+        <div class="row mb-2">
+            <div class="col-12 col-md-4 mb-2 mb-md-0">
+                <label for="customerSelect">Customer</label>
+                <select id="customerSelect" class="form-select" aria-label="Default select example" asp-items="customers" name="Cid">
+                    <option selected>Select Customer</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-4 mb-2 mb-md-0">
+                <label for="invoiceDate">Date</label>
+                <input type="date" id="invoiceDate" class="form-control" aria-label="Invoice Date" name="Date">
+            </div>
+            <div class="col-12 col-md-4 mb-2 mb-md-0">
+            <label for="productSelect">Product List</label>
+            <select id="productSelect" class="form-select" aria-label="Default select example">
+            <option selected>Product List</option>
+            @foreach (var product in productsData)
+            {
+            <option value="@product.Id" data-price="@product.Price">@product.Name</option>
+            }
+            </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12 col-md-4 mb-2 mb-md-0">
+                <label for="productQuantity">Product Quantity</label>
+                <input type="number" id="productQuantity" class="form-control" placeholder="Product Quantity" aria-label="Product Quantity">
+            </div>
+            <div class="col-12 col-md-4 mb-2 mb-md-0">
+                <label for="discountPercentage">Discount Percentage</label>
+                <input type="text" id="discountPercentage" class="form-control" placeholder="Discount Percentage" aria-label="Discount Percentage" name="Discount">
+            </div>
+             <div class="col-12 col-md-4 mb-2 mb-md-0">
+                <label for="productPrice">Product Price</label>
+                <input type="text" id="productPrice" class="form-control" placeholder="Product Price" aria-label="Product Price" readonly>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <input type="hidden" id="invoiceItemsJson" name="invoiceItemsJson" />
+
+            <div class="col-12 col-md-6 mb-2 mb-md-0">
+                <label for="total">Total</label>
+                <input type="text" id="total" class="form-control" placeholder="Total" aria-label="Total" readonly>
+            </div>
+            <div class="col-12 col-md-6 mb-2 mb-md-0">
+            <label for="grandTotal">Grand Total</label>
+            <input type="text" id="grandTotal" class="form-control" placeholder="Grand Total" aria-label="Grand Total" name="GrandTotal" readonly>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <button type="button" id="saveButton" class="btn btn-primary mt-3">Save to list</button>
+        <div class="form-group text-center">
+            <input type="submit" value="Create invoice" class="btn btn-success mt-3" />
+        </div>
+
+        <br />
+        <hr />
+
+        <div class="table-responsive">
+            <table id="invoiceTable" class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Product Name</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Discount</th>
+                        <th>Total</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows will be added here -->
+                </tbody>
+            </table>
+        </div>
+    </form>
+    <!-- Form tag ends -->
+</div>
+
+<script>
+    function updateTotal() {
+        var price = parseFloat(document.getElementById('productPrice').value) || 0;
+        var quantity = parseFloat(document.getElementById('productQuantity').value) || 0;
+        var discount = parseFloat(document.getElementById('discountPercentage').value) || 0;
+
+        var total = price * quantity;
+        var discountAmount = (total * discount) / 100;
+        var finalTotal = total - discountAmount;
+
+        document.getElementById('total').value = finalTotal.toFixed(2); // Show total with 2 decimal places
+    }
+
+    function updateGrandTotal() {
+        var tableBody = document.getElementById('invoiceTable').getElementsByTagName('tbody')[0];
+        var rows = tableBody.getElementsByTagName('tr');
+        var grandTotal = 0;
+
+        for (var i = 0; i < rows.length; i++) {
+            var cells = rows[i].getElementsByTagName('td');
+            var rowTotal = parseFloat(cells[4].textContent) || 0;
+            grandTotal += rowTotal;
+        }
+
+        document.getElementById('grandTotal').value = grandTotal.toFixed(2);
+    }
+
+    document.getElementById('productSelect').addEventListener('change', function () {
+        var selectedOption = this.options[this.selectedIndex];
+        var price = selectedOption.getAttribute('data-price');
+        document.getElementById('productPrice').value = price;
+        updateTotal(); // Update total when product is selected
+    });
+
+    document.getElementById('productQuantity').addEventListener('input', updateTotal);
+    document.getElementById('productPrice').addEventListener('input', updateTotal);
+    document.getElementById('discountPercentage').addEventListener('input', updateTotal);
+
+    document.getElementById('saveButton').addEventListener('click', function () {
+        var productSelect = document.getElementById('productSelect');
+        var productName = productSelect.options[productSelect.selectedIndex].text; // Get product name
+        var productPrice = document.getElementById('productPrice').value;
+        var productQuantity = document.getElementById('productQuantity').value;
+        var discountPercentage = document.getElementById('discountPercentage').value;
+        var total = document.getElementById('total').value;
+        var invoiceDate = document.getElementById('invoiceDate').value;
+
+        // Convert date to "dd-mm-yyyy" format
+        if (invoiceDate) {
+            var dateParts = invoiceDate.split('-');
+            invoiceDate = dateParts[2] + '-' + dateParts[1] + '-' + dateParts[0];
+        }
+
+        var tableBody = document.getElementById('invoiceTable').getElementsByTagName('tbody')[0];
+        var newRow = tableBody.insertRow();
+
+        newRow.insertCell(0).textContent = productName; // Insert product name
+        newRow.insertCell(1).textContent = productPrice;
+        newRow.insertCell(2).textContent = productQuantity;
+        newRow.insertCell(3).textContent = discountPercentage;
+        newRow.insertCell(4).textContent = total;
+        newRow.insertCell(5).textContent = invoiceDate;
+
+        var actionCell = newRow.insertCell(6);
+        var deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Remove';
+        deleteButton.className = 'btn btn-danger btn-sm';
+        deleteButton.addEventListener('click', function () {
+            tableBody.removeChild(newRow);
+            updateGrandTotal();
+        });
+        actionCell.appendChild(deleteButton);
+
+        // Update grand total
+        updateGrandTotal();
+
+        // Clear input fields
+        document.getElementById('productSelect').value = '';
+        document.getElementById('productPrice').value = '';
+        document.getElementById('productQuantity').value = '';
+        document.getElementById('discountPercentage').value = '';
+        document.getElementById('total').value = '';
+    });
+
+    document.querySelector('form').addEventListener('submit', function () {
+        var tableBody = document.getElementById('invoiceTable').getElementsByTagName('tbody')[0];
+        var rows = tableBody.getElementsByTagName('tr');
+        var invoiceItems = [];
+
+        for (var i = 0; i < rows.length; i++) {
+            var cells = rows[i].getElementsByTagName('td');
+            var item = {
+                Name: cells[0].textContent, // Pass product name as "Name"
+                Price: parseFloat(cells[1].textContent),
+                Quantity: parseInt(cells[2].textContent),
+                Discount: parseFloat(cells[3].textContent),
+                Total: parseFloat(cells[4].textContent)
+            };
+            invoiceItems.push(item);
+        }
+
+        document.getElementById('invoiceItemsJson').value = JSON.stringify(invoiceItems);
+    });
+</script>
